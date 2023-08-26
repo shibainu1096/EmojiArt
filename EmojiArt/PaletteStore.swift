@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct Palette: Identifiable {
+struct Palette: Identifiable, Codable {
     var name: String
     var emojis: String
     var id: Int
@@ -22,10 +22,29 @@ struct Palette: Identifiable {
 class PaletteStore: ObservableObject {
     let name: String
     
-    @Published var palettes = [Palette]()
+    @Published var palettes = [Palette]() {
+        didSet {
+            storeInUserDefaults()
+        }
+    }
+    
+    private var userDefaultsKey: String {
+        "PaletteStore:" + name
+    }
+    private func storeInUserDefaults() {
+        UserDefaults.standard.set(try? JSONEncoder().encode(palettes), forKey: userDefaultsKey)
+    }
+    
+    private func restoreFromUserDefaults() {
+        if let jsonData = UserDefaults.standard.data(forKey: userDefaultsKey),
+        let decodedPalettes = try? JSONDecoder().decode([Palette].self, from: jsonData) {
+            palettes = decodedPalettes
+        }
+    }
     
     init(named name: String) {
         self.name = name
+        restoreFromUserDefaults()
         if palettes.isEmpty {
             insertPalette(named: "Vehicles", emojis: "🚙🚗🚘🚕🚖🏎🚚🛻🚛🚐🚓🚔🚑🚒🚀✈️🛫🛬🛩🚁🛸🚲🏍🛶⛵️🚤🛥🛳⛴🚢🚂🚝🚅🚆🚊🚉🚇🛺🚜")
             insertPalette(named: "Sports", emojis: "🏈⚾️🏀⚽️🎾🏐🥏🏓⛳️🥅🥌🏂⛷🎳")
